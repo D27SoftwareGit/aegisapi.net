@@ -1,0 +1,32 @@
+kind = "api"
+  previewPath = "/licensing"
+  title = "AegisAPI Licensing"
+  version = "1.0.0"
+  id = "artifacts/ageisapi-licensing"
+
+  [[services]]
+  localPort = 8099
+  name = "Licensing API"
+  paths = ["/licensing"]
+
+  [services.development]
+  run = "pnpm --filter @workspace/aegisapi-licensing run dev"
+
+  [services.production]
+
+  [services.production.build]
+  args = ["pnpm", "--filter", "@workspace/aegisapi-licensing", "run", "build"]
+
+  [services.production.build.env]
+  NODE_ENV = "production"
+
+  [services.production.run]
+  args = ["node", "--enable-source-maps", "artifacts/ageisapi-licensing/dist/index.mjs"]
+
+  [services.production.run.env]
+  PORT = "8099"
+  NODE_ENV = "production"
+
+  [services.production.health.startup]
+  path = "/licensing/healthz"
+  

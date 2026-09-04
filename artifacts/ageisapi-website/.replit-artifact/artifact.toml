@@ -1,0 +1,31 @@
+kind = "web"
+  previewPath = "/"
+  title = "AegisAPI Website"
+  version = "1.0.0"
+  id = "artifacts/ageisapi-website"
+  router = "path"
+
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
+
+  [[services]]
+  name = "web"
+  paths = [ "/" ]
+  localPort = 21776
+
+  [services.development]
+  run = "pnpm --filter @workspace/aegisapi-website run dev"
+
+  [services.production]
+  build = [ "bash", "-c", "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/aegisapi-website run build" ]
+  publicDir = "artifacts/ageisapi-website/dist/public"
+  serve = "static"
+
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
+
+  [services.env]
+  PORT = "21776"
+  BASE_PATH = "/"

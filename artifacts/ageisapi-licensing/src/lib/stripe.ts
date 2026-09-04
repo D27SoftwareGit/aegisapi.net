@@ -1,0 +1,103 @@
+import Stripe from "stripe";
+
+function isProd(): boolean {
+  return process.env.AEGISAPI_PROD === "true";
+}
+
+export function getStripe(): Stripe {
+  const prod = isProd();
+  const key = prod
+    ? process.env.STRIPE_PROD_SECRET_KEY
+    : process.env.STRIPE_TEST_SECRET_KEY;
+  if (!key) {
+    throw new Error(
+      `Stripe ${prod ? "production" : "test"} secret key not configured. ` +
+        `Set ${prod ? "STRIPE_PROD_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY"}.`,
+    );
+  }
+  return new Stripe(key);
+}
+
+export function getStripePublishableKey(): string {
+  const prod = isProd();
+  const key = prod
+    ? process.env.STRIPE_PROD_PUBLISHABLE_KEY
+    : process.env.STRIPE_TEST_PUBLISHABLE_KEY;
+  if (!key) {
+    throw new Error(
+      `Stripe ${prod ? "production" : "test"} publishable key not configured.`,
+    );
+  }
+  return key;
+}
+
+export function getWebhookSecret(): string | null {
+  const prod = isProd();
+  return prod
+    ? (process.env.STRIPE_PROD_WEBHOOK_SECRET ?? null)
+    : (process.env.STRIPE_TEST_WEBHOOK_SECRET ?? null);
+}
+
+export const SKUS = {
+  call_20: {
+    calls: 20,
+    tier: "call_pack" as const,
+    name: "AegisAPI — 20 API Calls",
+    priceEnvKey: "PRICE_CALL_20_CENTS",
+  },
+  call_50: {
+    calls: 50,
+    tier: "call_pack" as const,
+    name: "AegisAPI — 50 API Calls",
+    priceEnvKey: "PRICE_CALL_50_CENTS",
+  },
+  call_200: {
+    calls: 200,
+    tier: "call_pack" as const,
+    name: "AegisAPI — 200 API Calls",
+    priceEnvKey: "PRICE_CALL_200_CENTS",
+  },
+  call_400: {
+    calls: 400,
+    tier: "call_pack" as const,
+    name: "AegisAPI — 400 API Calls",
+    priceEnvKey: "PRICE_CALL_400_CENTS",
+  },
+  yearly: {
+    calls: -1,
+    tier: "yearly" as const,
+    name: "AegisAPI — Yearly Unlimited",
+    priceEnvKey: "PRICE_YEARLY_CENTS",
+  },
+} as const;
+
+export type SkuKey = keyof typeof SKUS;
+
+export function getSkuPriceCents(skuKey: SkuKey): number {
+  const sku = SKUS[skuKey];
+  const raw = process.env[sku.priceEnvKey];
+  const cents = raw ? parseInt(raw, 10) : NaN;
+  if (isNaN(cents) || cents < 1) {
+    throw new Error(`Env var ${sku.priceEnvKey} not set or invalid.`);
+  }
+  return cents;
+}
+
+export function getAllPrices(): Record<
+  SkuKey,
+  { name: string; calls: number; tier: string; cents: number; dollars: string }
+> {
+  const result: Record<string, unknown> = {};
+  for (const [key, sku] of Object.entries(SKUS) as [SkuKey, (typeof SKUS)[SkuKey]][]) {
+    const raw = process.env[sku.priceEnvKey];
+    const cents = raw ? parseInt(raw, 10) : 0;
+    result[key] = {
+      name: sku.name,
+      calls: sku.calls,
+      tier: sku.tier,
+      cents,
+      dollars: (cents / 100).toFixed(2),
+    };
+  }
+  return result as ReturnType<typeof getAllPrices>;
+}
