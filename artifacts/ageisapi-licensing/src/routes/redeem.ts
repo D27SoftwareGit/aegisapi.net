@@ -5,7 +5,7 @@ import { db, purchaseTokensTable, licenseBindingsTable, userLicensesTable } from
 import { encryptField, lookupHash } from "../lib/crypto.js";
 import { issueLicenseKey } from "../lib/license-issuer.js";
 import { logger } from "../lib/logger.js";
-import { getAuth } from "@clerk/express";
+import { requireAuth } from "../middlewares/clerk.js";
 import rateLimit from "express-rate-limit";
 
 const router: IRouter = Router();
@@ -22,18 +22,22 @@ const redeemBodySchema = z.object({
   machineId: z.string().min(8).max(512),
 });
 
-// POST /licensing/redeem
-// Called by the website (authenticated user session).
-// User provides their Machine ID (copied from the desktop app) and their
-// purchase token. Server issues a signed, machine-bound license key and
-// returns it so the user can paste it into the desktop app.
-// The desktop app itself never contacts this endpoint — the airgap is preserved.
-router.post("/redeem", redeemLimiter, async (req, res, next) => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
+class RedeemHttpError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+  ) {
+    super(code);
+    this.name = "RedeemHttpError";
   }
+}
+
+// POST /licensing/redeem
+// Called by the website (authenticated, non-revoked user). Row is locked
+// until redeemed is set so two requests cannot mint two keys for one token.
+// The desktop app itself never contacts this endpoint.
+router.post("/redeem", redeemLimiter, requireAuth, async (req, res, next) => {
+  const clerkUserId = res.locals.clerkUserId as string;
 
   const parsed = redeemBodySchema.safeParse(req.body);
   if (!parsed.success) {
@@ -44,42 +48,42 @@ router.post("/redeem", redeemLimiter, async (req, res, next) => {
   const { token, machineId } = parsed.data;
 
   try {
-    const [purchase] = await db
-      .select()
-      .from(purchaseTokensTable)
-      .where(
-        and(
-          eq(purchaseTokensTable.token, token),
-          eq(purchaseTokensTable.clerkUserId, userId),
-          eq(purchaseTokensTable.redeemed, false),
-        ),
-      )
-      .limit(1);
+    const licenseKey = await db.transaction(async (tx) => {
+      const [purchase] = await tx
+        .select()
+        .from(purchaseTokensTable)
+        .where(
+          and(
+            eq(purchaseTokensTable.token, token),
+            eq(purchaseTokensTable.clerkUserId, clerkUserId),
+            eq(purchaseTokensTable.redeemed, false),
+          ),
+        )
+        .for("update")
+        .limit(1);
 
-    if (!purchase) {
-      res.status(404).json({ error: "token_not_found_or_already_redeemed" });
-      return;
-    }
+      if (!purchase) {
+        throw new RedeemHttpError(404, "token_not_found_or_already_redeemed");
+      }
 
-    if (new Date() > purchase.licenseExpiresAt) {
-      res.status(410).json({ error: "token_expired" });
-      return;
-    }
+      if (new Date() > purchase.licenseExpiresAt) {
+        throw new RedeemHttpError(410, "token_expired");
+      }
 
-    const tier = purchase.tier as "call_pack" | "yearly";
+      const tier = purchase.tier as "call_pack" | "yearly";
 
-    const licenseKey = issueLicenseKey({
-      machineId,
-      tier,
-      callBalance: purchase.callBalance,
-      expiresAt: purchase.licenseExpiresAt,
-    });
+      const key = issueLicenseKey({
+        machineId,
+        tier,
+        callBalance: purchase.callBalance,
+        expiresAt: purchase.licenseExpiresAt,
+        purchaseToken: token,
+      });
 
-    const keyHash = lookupHash(licenseKey);
+      const keyHash = lookupHash(key);
 
-    await db.transaction(async (tx) => {
       await tx.insert(licenseBindingsTable).values({
-        licenseKeyEncrypted: encryptField(licenseKey),
+        licenseKeyEncrypted: encryptField(key),
         licenseKeyLookupHash: keyHash,
         machineIdEncrypted: encryptField(machineId),
         status: "bound",
@@ -89,7 +93,7 @@ router.post("/redeem", redeemLimiter, async (req, res, next) => {
       });
 
       await tx.insert(userLicensesTable).values({
-        clerkUserId: userId,
+        clerkUserId,
         licenseKeyLookupHash: keyHash,
       });
 
@@ -97,16 +101,18 @@ router.post("/redeem", redeemLimiter, async (req, res, next) => {
         .update(purchaseTokensTable)
         .set({ redeemed: true, redeemedAt: new Date() })
         .where(eq(purchaseTokensTable.token, token));
+
+      return key;
     });
 
-    logger.info(
-      { token, clerkUserId: userId, tier },
-      "Purchase token redeemed — license key issued",
-    );
-
+    logger.info({ clerkUserId }, "Purchase token redeemed — license key issued");
     res.json({ licenseKey });
   } catch (err) {
-    logger.error({ err, token }, "Failed to redeem purchase token");
+    if (err instanceof RedeemHttpError) {
+      res.status(err.status).json({ error: err.code });
+      return;
+    }
+    logger.error({ err, clerkUserId }, "Failed to redeem purchase token");
     next(err);
   }
 });

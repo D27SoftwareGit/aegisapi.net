@@ -30,6 +30,23 @@ const checkoutBodySchema = z.object({
   returnUrl: z.string().url(),
 });
 
+function isAllowedCheckoutReturnUrl(raw: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return false;
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1") {
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  }
+  if (parsed.protocol !== "https:") {
+    return false;
+  }
+  return host === "aegisapi.net" || host === "www.aegisapi.net";
+}
+
 // POST /licensing/stripe/create-checkout-session
 // Requires Clerk auth. Returns { clientSecret } for Stripe embedded checkout.
 router.post(
@@ -44,6 +61,10 @@ router.post(
     }
 
     const { sku, returnUrl } = parsed.data;
+    if (!isAllowedCheckoutReturnUrl(returnUrl)) {
+      res.status(400).json({ error: "invalid_return_url" });
+      return;
+    }
     const skuKey = sku as SkuKey;
     const skuDef = SKUS[skuKey];
     const clerkUserId = res.locals.clerkUserId as string;

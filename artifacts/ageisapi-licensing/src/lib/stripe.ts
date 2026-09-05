@@ -1,39 +1,49 @@
 import Stripe from "stripe";
 
-function isProd(): boolean {
-  return process.env.AEGISAPI_PROD === "true";
+type StripeApiTarget = "prod" | "test";
+
+function stripeApiTarget(): StripeApiTarget {
+  const raw = process.env.STRIPE_API_TARGET;
+  if (raw === "prod" || raw === "test") {
+    return raw;
+  }
+  throw new Error(
+    'STRIPE_API_TARGET must be exactly "prod" or "test".',
+  );
 }
 
 export function getStripe(): Stripe {
-  const prod = isProd();
-  const key = prod
-    ? process.env.STRIPE_PROD_SECRET_KEY
-    : process.env.STRIPE_TEST_SECRET_KEY;
+  const target = stripeApiTarget();
+  const key =
+    target === "prod"
+      ? process.env.STRIPE_PROD_SECRET_KEY
+      : process.env.STRIPE_TEST_SECRET_KEY;
   if (!key) {
     throw new Error(
-      `Stripe ${prod ? "production" : "test"} secret key not configured. ` +
-        `Set ${prod ? "STRIPE_PROD_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY"}.`,
+      `Stripe ${target} secret key not configured. ` +
+        `Set ${target === "prod" ? "STRIPE_PROD_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY"}.`,
     );
   }
   return new Stripe(key);
 }
 
 export function getStripePublishableKey(): string {
-  const prod = isProd();
-  const key = prod
-    ? process.env.STRIPE_PROD_PUBLISHABLE_KEY
-    : process.env.STRIPE_TEST_PUBLISHABLE_KEY;
+  const target = stripeApiTarget();
+  const key =
+    target === "prod"
+      ? process.env.STRIPE_PROD_PUBLISHABLE_KEY
+      : process.env.STRIPE_TEST_PUBLISHABLE_KEY;
   if (!key) {
     throw new Error(
-      `Stripe ${prod ? "production" : "test"} publishable key not configured.`,
+      `Stripe ${target} publishable key not configured.`,
     );
   }
   return key;
 }
 
 export function getWebhookSecret(): string | null {
-  const prod = isProd();
-  return prod
+  const target = stripeApiTarget();
+  return target === "prod"
     ? (process.env.STRIPE_PROD_WEBHOOK_SECRET ?? null)
     : (process.env.STRIPE_TEST_WEBHOOK_SECRET ?? null);
 }

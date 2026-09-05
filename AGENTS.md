@@ -80,12 +80,13 @@ There is no `/terms` route.
 3. Prices are env vars `PRICE_*_CENTS`. Do not invent dollar amounts in copy.
    `Pricing.tsx` has a yearly fallback of `$89.99` if the API is down — treat that
    as a bug, not source of truth.
-4. Stripe webhook `checkout.session.completed` requires 3DS result
-   `authenticated` or it refunds and does not grant a token.
+4. Stripe webhook `checkout.session.completed` requires a PaymentIntent and 3DS result
+   `authenticated` or it refunds (when a PI exists) and does not grant a token.
 5. Webhook writes a purchase token (UUID) and emails via Resend.
 6. On `/account` the user pastes Machine ID from the desktop License tab.
-   `POST /licensing/redeem` (Clerk session) signs a key with `DEV_LICENSE_PRIVATE_KEY`
-   (Ed25519 PKCS8, base64). Token format: `aegis1.<payload>.<sig>`
+   `POST /licensing/redeem` (Clerk session, revoked/suspended denied) signs a key with
+   `LICENSE_PRIVATE_KEY` (Ed25519 PKCS8, base64).
+   Payload includes `purchaseToken`. Wire format: `aegis1.<payload>.<sig>`
 7. User pastes that key into the desktop app. Redeem is website-only;
    the desktop app must not call this endpoint.
 
@@ -102,12 +103,12 @@ deletes all Clerk users, and deletes Stripe customers including production.
 ## Secrets (never commit, never paste into chat)
 
 See `.env.example`. Root `.gitignore` ignores `.env` and `*.exe`. Do not stage env files.
-Includes: Clerk, Stripe test/prod, Resend, `AEGISAPI_DB_URL`, `DATABASE_URL`,
+Includes: Clerk, Stripe (`STRIPE_API_TARGET` is `prod` or `test`), Resend, `AEGISAPI_DB_URL`, `DATABASE_URL`,
 `AEGISAPI_LICENSING_ENCRYPTION_KEY` (32-byte hex AES-GCM),
-`AEGISAPI_LICENSING_ADMIN_KEY`, `DEV_LICENSE_PRIVATE_KEY`.
+`AEGISAPI_LICENSING_ADMIN_KEY`, `LICENSE_PRIVATE_KEY`.
 
 Field encryption at rest: AES-256-GCM. Lookup is HMAC-SHA256. Never log
-plaintext license keys or machine IDs.
+plaintext license keys, purchase tokens, or machine IDs.
 
 ## Product claims — match this site, do not dilute
 

@@ -82,7 +82,7 @@ Do not describe a floating “one machine at a time” seat you can bounce weekl
 Wire format: **`aegis1.<payload>.<signature>`** (Ed25519).  
 **No `ageis1.` alias.** If this site still **issues** `ageis1.` keys, they **will not activate** in the app. Issuance must emit `aegis1.`. Do not add a typo alias in the exe; fix the signer.
 
-Private signing key is **not** in the desktop repo. Website `DEV_LICENSE_PRIVATE_KEY` must match the public key baked in the exe or activation fails. Do not paste that private key into chat or into this file.
+Private signing key is **not** in the desktop repo. Website `LICENSE_PRIVATE_KEY` must match the public key baked in the exe or activation fails. Do not paste that private key into chat or into this file.
 
 Deactivate in the app: removes the key from **this PC** (all logins). Vaults are not deleted.
 

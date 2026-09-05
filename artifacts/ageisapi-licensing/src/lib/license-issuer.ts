@@ -5,13 +5,19 @@ export interface IssueLicenseKeyOpts {
   tier: "call_pack" | "yearly";
   callBalance: number;
   expiresAt: Date;
+  purchaseToken: string;
+}
+
+function signingKeyB64(): string {
+  const key = process.env.LICENSE_PRIVATE_KEY;
+  if (!key) {
+    throw new Error("LICENSE_PRIVATE_KEY is not set.");
+  }
+  return key;
 }
 
 export function issueLicenseKey(opts: IssueLicenseKeyOpts): string {
-  const privKeyB64 = process.env.DEV_LICENSE_PRIVATE_KEY;
-  if (!privKeyB64) {
-    throw new Error("DEV_LICENSE_PRIVATE_KEY environment variable is not set.");
-  }
+  const privKeyB64 = signingKeyB64();
 
   let privateKey;
   try {
@@ -22,7 +28,7 @@ export function issueLicenseKey(opts: IssueLicenseKeyOpts): string {
     });
   } catch (e) {
     throw new Error(
-      `Failed to parse DEV_LICENSE_PRIVATE_KEY: ${(e as Error).message}`,
+      `Failed to parse license signing key: ${(e as Error).message}`,
     );
   }
 
@@ -34,6 +40,7 @@ export function issueLicenseKey(opts: IssueLicenseKeyOpts): string {
     callBalance: opts.callBalance,
     issuedAt: now.toISOString(),
     expiresAt: opts.expiresAt.toISOString(),
+    purchaseToken: opts.purchaseToken,
   };
 
   const payloadBytes = Buffer.from(JSON.stringify(payload), "utf8");

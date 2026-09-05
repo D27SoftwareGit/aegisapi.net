@@ -79,39 +79,45 @@ async function handleCheckoutCompleted(
     ? session.payment_intent
     : session.payment_intent?.id;
 
-  if (paymentIntentId) {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ["latest_charge"],
-    });
+  if (!paymentIntentId) {
+    logger.error(
+      { sessionId: session.id, clerkUserId, sku },
+      "Checkout session has no payment_intent — license NOT granted",
+    );
+    return;
+  }
 
-    const charge = pi.latest_charge as Stripe.Charge | null;
-    const tds = charge?.payment_method_details?.card?.three_d_secure;
+  const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+    expand: ["latest_charge"],
+  });
 
-    logger.info({
-      event: "checkout.session.completed",
-      sessionId: session.id,
-      piId: pi.id,
-      tdsResult: tds?.result ?? "NULL — no 3DS performed",
-      tdsSuccess: tds?.succeeded ?? false,
-      liabilityShifted: tds?.result === "authenticated",
-    }, "3DS verification");
+  const charge = pi.latest_charge as Stripe.Charge | null;
+  const tds = charge?.payment_method_details?.card?.three_d_secure;
 
-    if (!tds || tds.result !== "authenticated") {
-      logger.error(
-        { sessionId: session.id, paymentIntentId, tdsResult: tds?.result ?? null, clerkUserId, sku },
-        "3DS authentication not completed — issuing refund, license NOT granted",
-      );
-      try {
-        await stripe.refunds.create({
-          payment_intent: paymentIntentId,
-          reason: "fraudulent",
-        });
-        logger.info({ paymentIntentId }, "Refund issued for non-authenticated 3DS charge");
-      } catch (refundErr) {
-        logger.error({ refundErr, paymentIntentId }, "Failed to issue refund for non-authenticated 3DS charge — manual action required");
-      }
-      return;
+  logger.info({
+    event: "checkout.session.completed",
+    sessionId: session.id,
+    piId: pi.id,
+    tdsResult: tds?.result ?? "NULL — no 3DS performed",
+    tdsSuccess: tds?.succeeded ?? false,
+    liabilityShifted: tds?.result === "authenticated",
+  }, "3DS verification");
+
+  if (!tds || tds.result !== "authenticated") {
+    logger.error(
+      { sessionId: session.id, paymentIntentId, tdsResult: tds?.result ?? null, clerkUserId, sku },
+      "3DS authentication not completed — issuing refund, license NOT granted",
+    );
+    try {
+      await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        reason: "fraudulent",
+      });
+      logger.info({ paymentIntentId }, "Refund issued for non-authenticated 3DS charge");
+    } catch (refundErr) {
+      logger.error({ refundErr, paymentIntentId }, "Failed to issue refund for non-authenticated 3DS charge — manual action required");
     }
+    return;
   }
 
   // ── Issue purchase token ─────────────────────────────────────────────────────
@@ -141,7 +147,7 @@ async function handleCheckoutCompleted(
     });
 
     logger.info(
-      { clerkUserId, sku, token, email },
+      { clerkUserId, sku, email },
       "Purchase token created",
     );
 
