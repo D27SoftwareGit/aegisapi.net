@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Check, KeyRound, Download, ShoppingBag, PartyPopper, Loader2, AlertCircle } from "lucide-react";
+import { Copy, Check, KeyRound, ShoppingBag, PartyPopper, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -418,20 +418,6 @@ function PurchasesTab() {
   );
 }
 
-function MigrationTab() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-      <Download className="h-10 w-10 text-muted-foreground/40" />
-      <div>
-        <p className="font-medium text-foreground">Migration tool</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          The migration tool binary is coming soon. Check back after the next release.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function PaymentSuccessBanner() {
   return (
     <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-5 py-4">
@@ -539,7 +525,6 @@ export default function AccountPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="licenses">My licenses</TabsTrigger>
           <TabsTrigger value="purchases">Purchases</TabsTrigger>
-          <TabsTrigger value="migration">Migration tool</TabsTrigger>
         </TabsList>
 
         <TabsContent value="licenses">
@@ -547,9 +532,6 @@ export default function AccountPage() {
         </TabsContent>
         <TabsContent value="purchases">
           <PurchasesTab />
-        </TabsContent>
-        <TabsContent value="migration">
-          <MigrationTab />
         </TabsContent>
       </Tabs>
     </div>

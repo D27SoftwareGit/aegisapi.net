@@ -1,4 +1,4 @@
-import { Lock, WifiOff, Fingerprint, RefreshCw, ShieldAlert, FileKey, ScrollText } from "lucide-react";
+import { Lock, WifiOff, Fingerprint, ShieldAlert, FileKey, ScrollText } from "lucide-react";
 import { motion } from "framer-motion";
 
 const PILLARS = [
@@ -15,17 +15,12 @@ const PILLARS = [
   {
     icon: WifiOff,
     title: "No telemetry, no analytics, no phone-home",
-    body: "AegisAPI does not collect usage data, crash reports, or behavioral analytics. It never makes a network call. Licensing itself is air-gapped: you're issued a key up front and it's verified entirely on your machine, with no activation server to call.",
+    body: "The installed app does not phone home. No analytics, crash reporting, or license check-in to our servers. License keys are verified on the PC. Send goes only to URLs you configure.",
   },
   {
     icon: FileKey,
     title: "Local-only storage",
     body: "Your encrypted vault file lives on your disk. There is no cloud sync and no server-side copy of your secrets. If our servers went dark tomorrow, your vault would still open.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Key rotation built in",
-    body: "The internal vault key can be rotated without re-entering every secret by hand. Rotation is a first-class operation, not an afterthought bolted on post-launch.",
   },
   {
     icon: ShieldAlert,
@@ -79,10 +74,10 @@ export default function Security() {
               The no-telemetry proof
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Don't take our word for it. AegisAPI never makes an outbound network
-              call on its own — not for licensing, not for updates, not for anything.
-              The only network activity that ever occurs is the API calls you
-              explicitly configure the app to make on your behalf.
+              The installed app does not phone home — not for licensing, not for
+              updates, not for analytics. The only network activity is Send to
+              APIs you configured. This website is a separate browser product
+              (account, pay, issue keys).
             </p>
           </div>
           <div className="w-full max-w-md rounded-xl border border-border/60 bg-background/60 p-6 font-mono text-xs">

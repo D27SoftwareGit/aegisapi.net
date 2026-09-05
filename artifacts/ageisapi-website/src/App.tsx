@@ -10,6 +10,7 @@ import Pricing from "@/pages/Pricing";
 import Download from "@/pages/Download";
 import Docs from "@/pages/Docs";
 import Legal from "@/pages/Legal";
+import Support from "@/pages/Support";
 import SignInPage from "@/pages/SignIn";
 import SignUpPage from "@/pages/SignUp";
 import AccountPage from "@/pages/Account";
@@ -35,6 +36,7 @@ function Router() {
           <Route path="/download" component={Download} />
           <Route path="/docs" component={Docs} />
           <Route path="/legal" component={Legal} />
+          <Route path="/support" component={Support} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/account" component={AccountPage} />

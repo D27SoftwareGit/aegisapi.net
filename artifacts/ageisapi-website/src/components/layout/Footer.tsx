@@ -10,6 +10,7 @@ const PRODUCT_LINKS = [
 
 const RESOURCE_LINKS = [
   { href: "/docs", label: "Documentation" },
+  { href: "/support", label: "Support" },
   { href: "/security", label: "No-telemetry proof" },
 ];
 

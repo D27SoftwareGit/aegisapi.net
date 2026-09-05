@@ -201,8 +201,12 @@ export default function Pricing() {
             <ul className="mt-6 flex-1 space-y-3">
               <Feature>Unlimited API calls</Feature>
               <Feature>Priority license support</Feature>
-              <Feature>Free upgrades for the year</Feature>
-              <Feature>One active machine binding</Feature>
+              <Feature>
+                Bug-fix releases we ship during the year, plus any features that
+                happen to ship — new functionality is not guaranteed. The app
+                does not auto-update.
+              </Feature>
+              <Feature>One physical PC</Feature>
             </ul>
 
             <Button
@@ -254,8 +258,8 @@ export default function Pricing() {
 
         <div className="mt-16 rounded-xl border border-border/60 bg-card/50 p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Every plan is bound to your machine, not shared across devices at
-            the same time.
+            One physical PC per license. Extra Windows logins on that PC are
+            not extra seats. The key cannot move to another machine.
           </p>
         </div>
       </div>

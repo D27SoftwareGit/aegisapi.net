@@ -117,7 +117,7 @@ router.post(
         custom_text: {
           terms_of_service_acceptance: {
             message:
-              "I agree to the [AegisAPI Terms of Service](https://aegisapi.net/terms) and understand that all sales are final and non-refundable.",
+              "I agree to the [AegisAPI Terms of Service](https://aegisapi.net/legal) and understand that all sales are final and non-refundable.",
           },
         },
         return_url: returnUrl,

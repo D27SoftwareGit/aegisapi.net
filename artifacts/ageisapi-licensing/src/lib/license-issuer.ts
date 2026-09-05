@@ -39,5 +39,5 @@ export function issueLicenseKey(opts: IssueLicenseKeyOpts): string {
   const payloadBytes = Buffer.from(JSON.stringify(payload), "utf8");
   const signature = cryptoSign(null, payloadBytes, privateKey);
 
-  return `ageis1.${payloadBytes.toString("base64url")}.${signature.toString("base64url")}`;
+  return `aegis1.${payloadBytes.toString("base64url")}.${signature.toString("base64url")}`;
 }

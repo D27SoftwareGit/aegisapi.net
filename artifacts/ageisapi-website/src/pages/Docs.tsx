@@ -14,7 +14,7 @@ const SECTIONS = [
   {
     icon: ArrowLeftRight,
     title: "Licenses are bound to one machine",
-    body: "Each license key activates on a single machine and cannot be transferred or shared. This is enforced locally, with no server-side check, and is by design so a license can't run on two machines at once.",
+    body: "One physical PC, one license. Extra Windows logins on that PC are not extra seats. The key cannot move to another machine. Remote desktop is not a v1 SKU. After you paste a key, the app verifies it locally — it does not call our license servers.",
   },
   {
     icon: LifeBuoy,

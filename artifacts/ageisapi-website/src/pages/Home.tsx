@@ -19,12 +19,12 @@ const FEATURES = [
   {
     icon: WifiOff,
     title: "Zero telemetry",
-    body: "AegisAPI never makes an outbound network call. Licensing itself is fully air-gapped: you're issued a key up front and the app verifies it entirely on your machine, with no activation server to call. No analytics, no crash reporting, no phone-home, ever.",
+    body: "The installed app does not phone home. No analytics, crash reporting, or license check-in to our servers. License keys are verified on the PC. Keys leave this machine only when you Send to an API you configured.",
   },
   {
     icon: KeyRound,
-    title: "Your keys never leave your machine",
-    body: "Vaults are stored and decrypted locally. There is no cloud sync, no server-side copy, and nothing for an attacker to breach remotely.",
+    title: "The vault stays on this PC",
+    body: "Vaults are stored and decrypted locally. There is no cloud sync and no server-side copy. We never hold your secrets.",
   },
   {
     icon: ScrollText,
@@ -39,7 +39,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Install", body: "Download the build for Windows, macOS, or Linux and run the installer. No account required to start." },
+  { n: "01", title: "Install", body: "Download the Windows installer and run Setup. No account required to start a vault." },
   { n: "02", title: "Create your vault", body: "Set a passphrase. AegisAPI derives your encryption key locally with Argon2 — we never see it." },
   { n: "03", title: "Store & retrieve", body: "Save keys once, pull them into any project instantly, without ever pasting secrets into plaintext files again." },
 ];
@@ -115,13 +115,13 @@ export default function Home() {
               <h1 className="text-3xl font-semibold leading-[1.2] tracking-tight text-foreground sm:text-5xl">
                 Your API keys, locked down
                 <span className="block bg-gradient-to-r from-primary via-primary to-accent bg-clip-text font-semibold text-transparent">
-                  where nobody can reach them.
+                  on this PC.
                 </span>
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                AegisAPI is an encrypted vault that lives entirely on your machine.
-                AES‑256‑GCM at rest, no cloud, no telemetry, no exceptions.
+                A local encrypted vault. We never hold a copy. While the app is
+                unlocked, it can see your keys — that is how Send works.
               </p>
 
               <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
@@ -142,7 +142,7 @@ export default function Home() {
               </div>
 
               <p className="mt-5 text-xs tracking-wide text-muted-foreground">
-                No credit card required · Windows, macOS &amp; Linux desktop app
+                No credit card required · Windows desktop app
               </p>
             </motion.div>
           </div>
@@ -160,8 +160,8 @@ export default function Home() {
             </h2>
             <p className="mt-4 text-muted-foreground">
               Every decision behind AegisAPI comes back to one rule: your
-              secrets are yours and yours only. They're unreadable to anyone
-              but you and the services you call — that includes us.
+              secrets stay in a local vault. We do not hold a copy. The
+              unlocked app can read them so you can Send to APIs you configure.
             </p>
           </div>
 
@@ -195,8 +195,8 @@ export default function Home() {
                 Up and running in three steps
               </h2>
               <p className="mt-4 text-muted-foreground">
-                No setup wizard, no cloud onboarding flow. Install, unlock, and
-                start storing secrets in minutes.
+                No cloud onboarding flow. Install, unlock, and start storing
+                secrets in minutes.
               </p>
 
               <div className="mt-10 space-y-8">
@@ -240,8 +240,8 @@ export default function Home() {
                   <p className="text-accent">✓ Vault unlocked (AES-256-GCM)</p>
                   <p className="text-muted-foreground mt-4">$ vault get STRIPE_SECRET_KEY</p>
                   <p className="text-foreground">sk_live_••••••••••••••••••••</p>
-                  <p className="text-muted-foreground mt-4">$ vault status</p>
-                  <p className="text-accent">✓ 0 network calls this session</p>
+                  <p className="text-muted-foreground mt-4">$ send POST https://api.example.com</p>
+                  <p className="text-accent">✓ Only the URL you configured</p>
                   <p className="mt-2 inline-block h-3.5 w-1.5 animate-pulse bg-primary/70 align-middle" />
                 </div>
               </div>
