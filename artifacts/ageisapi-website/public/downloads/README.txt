@@ -1,3 +1,4 @@
-# Place the signed Windows Setup here as AegisAPI-Setup.exe (not committed).
-# After deploy/release-win.ps1: copy the signed NSIS to this filename, SHA-256 it,
-# and put the hash in src/data/download-manifest.json (committed).
+# Replit: copy the signed NSIS here as AegisAPI-Setup.exe (not git).
+# Source on the build PC: C:\aegisapi\release\AegisAPI Setup 1.0.0.exe
+# Drop into this folder (public/downloads), then rebuild so Vite copies it into dist.
+# SHA-256 of that file is in src/data/download-manifest.json.
