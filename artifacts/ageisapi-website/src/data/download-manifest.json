@@ -1,6 +1,6 @@
 {
   "filename": "AegisAPI-Setup.exe",
-  "path": "/downloads/AegisAPI-Setup.exe",
+  "path": "https://sawwwaegisapinet.blob.core.windows.net/downloads/AegisAPI-Setup.exe",
   "sha256": "15d735fa85d27122d42f223177147805389913af4fb8dda0abc981f551762392",
   "build": "1.0.0",
   "bytes": 113674064

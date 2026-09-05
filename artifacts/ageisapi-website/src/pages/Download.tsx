@@ -2,8 +2,7 @@ import { Download as DownloadIcon, Monitor, ShieldCheck, KeyRound } from "lucide
 import { Button } from "@/components/ui/button";
 import manifest from "@/data/download-manifest.json";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const setupHref = `${BASE}${manifest.path}`;
+const setupHref = manifest.path;
 
 const WINDOWS_REQUIREMENTS = [
   "Windows 10 or later (64-bit)",
@@ -30,7 +29,7 @@ export default function Download() {
 
         <div className="mt-10 flex flex-col items-center gap-4">
           <Button asChild size="lg" className="w-full sm:w-auto" data-testid="button-download-windows">
-            <a href={setupHref} download={manifest.filename}>
+            <a href={setupHref}>
               <Monitor className="mr-2 h-4 w-4" />
               Download for Windows
             </a>
