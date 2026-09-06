@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const rawPort = process.env.PORT;
 // PORT is only required for the dev/preview server, not during `vite build`.
@@ -33,7 +32,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
   ],
   resolve: {
     alias: {
@@ -50,15 +48,13 @@ export default defineConfig({
   server: {
     port,
     strictPort: true,
-    host: "0.0.0.0",
-    allowedHosts: true,
+    host: "127.0.0.1",
     fs: {
       strict: true,
     },
   },
   preview: {
     port,
-    host: "0.0.0.0",
-    allowedHosts: true,
+    host: "127.0.0.1",
   },
 });

@@ -38,7 +38,6 @@ pnpm workspace. Node 20+, pnpm 10. Local folder: `C:\aegisapi_www`.
 - `artifacts/ageisapi-website` — Vite/React public site (Wouter)
 - `artifacts/ageisapi-licensing` — Express API mounted at `/licensing`
 - `lib/db` — PostgreSQL / Drizzle
-- `lib/api-*` — generated client/spec (thin)
 - `attached_assets` — images (aliased as `@assets`)
 
 Folder names keep the spelling `ageis` (`artifacts/ageisapi-*`). Do not rename those unless that is the task.
@@ -59,9 +58,8 @@ Dev/preview also requires `PORT`.
 - `/` — product
 - `/security`
 - `/pricing` — loads `GET /licensing/pricing`; checkout requires sign-in
-- `/download` — Windows Setup only. Link is `/downloads/AegisAPI-Setup.exe`
-  (bytes gitignored). SHA-256 / build live in
-  `artifacts/ageisapi-website/src/data/download-manifest.json` (committed; empty until Phillip posts the file).
+- `/download` — Windows Setup only. URL, SHA-256, and build live in
+  `artifacts/ageisapi-website/src/data/download-manifest.json`.
 - `/docs`
 - `/legal` — Terms, Privacy, License on one page
 - `/support` — thin contact page (Store-expected)
@@ -78,11 +76,12 @@ There is no `/terms` route.
 2. User buys a SKU on `/pricing` (embedded Stripe). SKUs in code: `call_20`,
    `call_50`, `call_200`, `call_400`, `yearly`. Enterprise is `mailto:sales@aegisapi.net` only.
 3. Prices are env vars `PRICE_*_CENTS`. Do not invent dollar amounts in copy.
-   `Pricing.tsx` has a yearly fallback of `$89.99` if the API is down — treat that
-   as a bug, not source of truth.
+   If `/licensing/pricing` is down, the page shows "—" and Buy is disabled.
 4. Stripe webhook `checkout.session.completed` requires a PaymentIntent and 3DS result
    `authenticated` or it refunds (when a PI exists) and does not grant a token.
-5. Webhook writes a purchase token (UUID) and emails via Resend.
+5. Webhook writes a purchase token (UUID) then emails a receipt via Resend.
+   Missing `RESEND_API_KEY` or `RESEND_FROM_EMAIL` refuses process start.
+   Resend down after insert: token stands; `/account` is the redeem path.
 6. On `/account` the user pastes Machine ID from the desktop License tab.
    `POST /licensing/redeem` (Clerk session, revoked/suspended denied) signs a key with
    `LICENSE_PRIVATE_KEY` (Ed25519 PKCS8, base64).
@@ -90,22 +89,16 @@ There is no `/terms` route.
 7. User pastes that key into the desktop app. Redeem is website-only;
    the desktop app must not call this endpoint.
 
-Also present, unauthenticated, under `/licensing`: `POST /status` (read-only).
-`POST /claim` and `POST /release` return **404** `{ error: "not_supported" }`.
-Do not document them as a customer license move — About forbids moving a key
-to another machine. If they re-bind a purchase to a new Machine ID, stop and
-tell Phillip; that is a transfer. Admin under `/licensing/admin`
-(Bearer `AEGISAPI_LICENSING_ADMIN_KEY`): force-clear, audit, backups, reset.
-
-Do not call or document `/admin/reset-app` to customers. It truncates DBs,
-deletes all Clerk users, and deletes Stripe customers including production.
+There is no `/licensing/admin` and no public license lookup or transfer API.
+If they re-bind a purchase to a new Machine ID, stop and tell Phillip; that is
+a transfer. Wipe Clerk, Stripe, or the DB from their dashboards or a script
+you run — not from this process.
 
 ## Secrets (never commit, never paste into chat)
 
 See `.env.example`. Root `.gitignore` ignores `.env` and `*.exe`. Do not stage env files.
-Includes: Clerk, Stripe (`STRIPE_API_TARGET` is `prod` or `test`), Resend, `AEGISAPI_DB_URL`, `DATABASE_URL`,
-`AEGISAPI_LICENSING_ENCRYPTION_KEY` (32-byte hex AES-GCM),
-`AEGISAPI_LICENSING_ADMIN_KEY`, `LICENSE_PRIVATE_KEY`.
+Includes: Clerk, Stripe (`STRIPE_API_TARGET` is `prod` or `test`), `PRICE_*_CENTS`, Resend, `AEGISAPI_DB_URL`,
+`AEGISAPI_LICENSING_ENCRYPTION_KEY` (32-byte hex AES-GCM), `LICENSE_PRIVATE_KEY`.
 
 Field encryption at rest: AES-256-GCM. Lookup is HMAC-SHA256. Never log
 plaintext license keys, purchase tokens, or machine IDs.
@@ -141,8 +134,7 @@ The **signed** Windows Setup may be dropped at
 Commit the SHA-256 in `src/data/download-manifest.json` after the file is posted.
 Do not put the installer in the desktop git repo.
 
-Replit is a temporary host until Azure. Do not bake Replit-only URLs into legal copy
-as if they were the company.
+Do not bake host-provider URLs into legal copy as if they were the company.
 
 ## How to change things
 

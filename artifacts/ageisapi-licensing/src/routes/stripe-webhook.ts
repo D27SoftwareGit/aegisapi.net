@@ -13,11 +13,6 @@ const router: IRouter = Router();
 // Must be mounted BEFORE express.json() — receives raw Buffer for sig verification.
 router.post("/", async (req, res) => {
   const webhookSecret = getWebhookSecret();
-  if (!webhookSecret) {
-    logger.error("STRIPE_WEBHOOK_SECRET not set — webhook rejected");
-    res.status(500).json({ error: "webhook_not_configured" });
-    return;
-  }
 
   const sig = req.headers["stripe-signature"] as string;
   if (!sig) {
@@ -37,11 +32,28 @@ router.post("/", async (req, res) => {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    await handleCheckoutCompleted(session);
+    try {
+      await handleCheckoutCompleted(session);
+    } catch (err) {
+      logger.error({ err, sessionId: session.id }, "Checkout webhook handler failed");
+      res.status(500).json({ error: "webhook_failed" });
+      return;
+    }
   }
 
   res.json({ received: true });
 });
+
+function isUniqueViolation(err: unknown): boolean {
+  let current: unknown = err;
+  for (let i = 0; i < 4 && current && typeof current === "object"; i++) {
+    if ((current as { code?: string }).code === "23505") {
+      return true;
+    }
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
 
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
@@ -99,7 +111,6 @@ async function handleCheckoutCompleted(
     sessionId: session.id,
     piId: pi.id,
     tdsResult: tds?.result ?? "NULL — no 3DS performed",
-    tdsSuccess: tds?.succeeded ?? false,
     liabilityShifted: tds?.result === "authenticated",
   }, "3DS verification");
 
@@ -111,7 +122,7 @@ async function handleCheckoutCompleted(
     try {
       await stripe.refunds.create({
         payment_intent: paymentIntentId,
-        reason: "fraudulent",
+        reason: "requested_by_customer",
       });
       logger.info({ paymentIntentId }, "Refund issued for non-authenticated 3DS charge");
     } catch (refundErr) {
@@ -122,7 +133,14 @@ async function handleCheckoutCompleted(
 
   // ── Issue purchase token ─────────────────────────────────────────────────────
   const skuDef = SKUS[sku];
-  const pricePaidCents = parseInt(meta.priceCents ?? "0", 10);
+  const pricePaidCents = session.amount_total;
+  if (pricePaidCents == null || pricePaidCents < 1) {
+    logger.error(
+      { sessionId: session.id, clerkUserId, sku, amountTotal: session.amount_total },
+      "Checkout session has no amount_total — license NOT granted",
+    );
+    return;
+  }
 
   const licenseExpiresAt = new Date();
   licenseExpiresAt.setMonth(licenseExpiresAt.getMonth() + 12);
@@ -145,24 +163,39 @@ async function handleCheckoutCompleted(
       email,
       licenseExpiresAt,
     });
-
-    logger.info(
-      { clerkUserId, sku, email },
-      "Purchase token created",
-    );
-
-    if (email) {
-      await sendPurchaseEmail({
-        to: email,
-        tier: skuDef.tier,
-        callBalance: skuDef.calls,
-        pricePaidCents,
-        token,
-        licenseExpiresAt,
-      });
-    }
   } catch (err) {
+    if (isUniqueViolation(err)) {
+      logger.info({ sessionId: session.id }, "Duplicate webhook delivery — purchase token already exists, skipping");
+      return;
+    }
     logger.error({ err, clerkUserId, sku, sessionId: session.id }, "Failed to create purchase token");
+    return;
+  }
+
+  logger.info({ clerkUserId, sku }, "Purchase token created");
+
+  if (!email) {
+    logger.error(
+      { clerkUserId, sku, sessionId: session.id },
+      "Checkout session has no customer email — token issued, mail skipped",
+    );
+    return;
+  }
+
+  try {
+    await sendPurchaseEmail({
+      to: email,
+      tier: skuDef.tier,
+      callBalance: skuDef.calls,
+      pricePaidCents,
+      token,
+      licenseExpiresAt,
+    });
+  } catch (err) {
+    logger.error(
+      { err, clerkUserId, sku, sessionId: session.id },
+      "Purchase token issued but purchase email failed",
+    );
   }
 }
 

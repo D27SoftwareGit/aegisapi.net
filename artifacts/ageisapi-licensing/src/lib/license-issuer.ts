@@ -16,6 +16,10 @@ function signingKeyB64(): string {
   return key;
 }
 
+export function assertSigningKeyConfigured(): void {
+  signingKeyB64();
+}
+
 export function issueLicenseKey(opts: IssueLicenseKeyOpts): string {
   const privKeyB64 = signingKeyB64();
 

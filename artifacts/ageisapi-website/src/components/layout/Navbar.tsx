@@ -27,7 +27,6 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              data-testid={`link-nav-${link.label.toLowerCase()}`}
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 location === link.href
                   ? "text-primary"
@@ -52,10 +51,10 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm" data-testid="button-nav-signin">
+              <Button asChild variant="ghost" size="sm">
                 <Link href="/sign-in">Sign in</Link>
               </Button>
-              <Button asChild size="sm" data-testid="button-nav-trial">
+              <Button asChild size="sm">
                 <Link href="/download">Start free trial</Link>
               </Button>
             </>
@@ -67,7 +66,6 @@ export function Navbar() {
           className="inline-flex items-center justify-center rounded-md p-2 text-foreground md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
-          data-testid="button-mobile-menu"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>

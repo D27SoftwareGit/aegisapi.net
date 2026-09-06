@@ -1,5 +1,4 @@
 import { Lock, WifiOff, Fingerprint, ShieldAlert, FileKey, ScrollText } from "lucide-react";
-import { motion } from "framer-motion";
 
 const PILLARS = [
   {
@@ -49,13 +48,9 @@ export default function Security() {
       </div>
 
       <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {PILLARS.map((p, i) => (
-          <motion.div
+        {PILLARS.map((p) => (
+          <div
             key={p.title}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: i * 0.05 }}
             className="rounded-xl border border-border/60 bg-card p-6"
           >
             <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -63,7 +58,7 @@ export default function Security() {
             </div>
             <h3 className="text-base font-semibold text-foreground">{p.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-          </motion.div>
+          </div>
         ))}
       </div>
 

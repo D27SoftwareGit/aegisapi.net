@@ -11,7 +11,6 @@ const PRODUCT_LINKS = [
 const RESOURCE_LINKS = [
   { href: "/docs", label: "Documentation" },
   { href: "/support", label: "Support" },
-  { href: "/security", label: "No-telemetry proof" },
 ];
 
 const LEGAL_LINKS = [
@@ -91,7 +90,6 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 text-sm text-muted-foreground transition-opacity hover:opacity-80"
-            data-testid="link-powered-by-d27"
           >
             <span>Powered by</span>
             <img src={d27Logo} alt="D27 Software L.L.C." className="h-9 w-auto" />

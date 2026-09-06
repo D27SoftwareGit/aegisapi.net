@@ -30,7 +30,7 @@ router.get("/account/purchases", requireAuth, async (_req, res, next) => {
 
     const purchases = rows.map((row) => ({
       id: row.id,
-      token: row.token,
+      token: row.redeemed ? null : row.token,
       tier: row.tier,
       callBalance: row.callBalance,
       pricePaidCents: row.pricePaidCents,

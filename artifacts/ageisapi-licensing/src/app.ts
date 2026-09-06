@@ -7,6 +7,7 @@ import stripeWebhookRouter from "./routes/stripe-webhook.js";
 import { logger } from "./lib/logger.js";
 
 const app: Express = express();
+app.disable("x-powered-by");
 
 if (process.env["NODE_ENV"] !== "production") {
   app.use((_req, res) => {
@@ -43,8 +44,8 @@ app.use("/api/clerk/webhook", express.raw({ type: "application/json" }), webhook
 app.use("/licensing/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhookRouter);
 
 // Standard body parsing + Clerk session middleware for all other routes.
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "32kb" }));
+app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 app.use(
   clerkMiddleware({
     publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,

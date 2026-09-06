@@ -1,12 +1,8 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
 # compiled output
 dist
 tmp
 out-tsc
 *.tsbuildinfo
-.expo
-.expo-shared
 
 # dependencies
 node_modules
@@ -41,10 +37,6 @@ testem.log
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
-
-# Replit
 .cache/
 .local/
 
@@ -56,4 +48,3 @@ Thumbs.db
 # Public Windows installer bytes (hash lives in src/data/download-manifest.json)
 *.exe
 artifacts/ageisapi-website/public/downloads/*.exe
-

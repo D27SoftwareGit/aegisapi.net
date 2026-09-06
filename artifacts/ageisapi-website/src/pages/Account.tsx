@@ -28,7 +28,7 @@ interface License {
 
 interface Purchase {
   id: number;
-  token: string;
+  token: string | null;
   tier: string;
   callBalance: number;
   pricePaidCents: number;
@@ -59,12 +59,10 @@ function CopyButton({ text, size = "default" }: { text: string; size?: "default"
 }
 
 function statusBadge(status: string) {
-  const map: Record<string, string> = {
-    bound: "bg-green-500/15 text-green-400 border-green-500/20",
-    unbound: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
-    released: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  };
-  return map[status] ?? "bg-zinc-500/15 text-zinc-400 border-zinc-500/20";
+  if (status === "bound") {
+    return "bg-green-500/15 text-green-400 border-green-500/20";
+  }
+  return "bg-zinc-500/15 text-zinc-400 border-zinc-500/20";
 }
 
 function tierLabel(tier: string, callBalance: number) {
@@ -139,7 +137,7 @@ function LicensesTab() {
               <p className="text-xs text-muted-foreground">Key unavailable</p>
             )}
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span>Pack calls remaining: <span className="text-foreground font-medium">{lic.packCallBalance}</span></span>
+              <span>Call pack size: <span className="text-foreground font-medium">{lic.packCallBalance}</span></span>
               {lic.boundAt && <span>Bound: <span className="text-foreground">{new Date(lic.boundAt).toLocaleDateString()}</span></span>}
               <span>Added: <span className="text-foreground">{new Date(lic.linkedAt).toLocaleDateString()}</span></span>
             </div>
@@ -171,7 +169,7 @@ function RedeemDialog({ purchase, open, onClose, onRedeemed }: RedeemDialogProps
 
   async function submit() {
     const mid = machineId.trim();
-    if (!mid || busy) return;
+    if (!mid || busy || !purchase.token) return;
     setBusy(true); setError(null);
     try {
       const token = await getToken();
@@ -471,11 +469,11 @@ export default function AccountPage() {
     if (isLoaded && !isSignedIn) navigate("/sign-in");
   }, [isLoaded, isSignedIn, navigate]);
 
-  // Check real payment outcome when returning from Stripe
+  // Check real payment outcome when returning from Stripe. Poll while
+  // the webhook may still be writing the purchase token.
   useEffect(() => {
     if (!initialCheckout.isReturn || !isLoaded || !isSignedIn) return;
 
-    // Clean the URL immediately
     window.history.replaceState(null, "", window.location.pathname);
 
     if (!initialCheckout.sessionId) {
@@ -483,7 +481,11 @@ export default function AccountPage() {
       return;
     }
 
-    (async () => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 15;
+
+    async function check() {
       try {
         const token = await getToken();
         const res = await fetch(
@@ -491,11 +493,27 @@ export default function AccountPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
-        setCheckoutOutcome(data.status ?? "pending");
+        if (cancelled) return;
+        const status = data.status as CheckoutOutcome;
+        if (status === "granted" || status === "refunded") {
+          setCheckoutOutcome(status);
+          return;
+        }
+        attempts += 1;
+        if (attempts >= maxAttempts) {
+          setCheckoutOutcome("pending");
+          return;
+        }
+        setTimeout(check, 2000);
       } catch {
-        setCheckoutOutcome(null);
+        if (!cancelled) setCheckoutOutcome(null);
       }
-    })();
+    }
+
+    void check();
+    return () => {
+      cancelled = true;
+    };
   }, [initialCheckout.isReturn, initialCheckout.sessionId, isLoaded, isSignedIn, getToken]);
 
   if (!isLoaded || !isSignedIn) return null;
@@ -508,7 +526,7 @@ export default function AccountPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">My account</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your licenses and account settings.
+          Purchases and issued license keys.
         </p>
       </div>
 
@@ -516,6 +534,13 @@ export default function AccountPage() {
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-border/60 bg-muted/40 px-5 py-4">
           <Loader2 className="h-5 w-5 shrink-0 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Verifying payment…</p>
+        </div>
+      )}
+      {checkoutOutcome === "pending" && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-border/60 bg-muted/40 px-5 py-4">
+          <p className="text-sm text-muted-foreground">
+            Payment is still processing. Refresh this page in a minute.
+          </p>
         </div>
       )}
       {paymentGranted && <PaymentSuccessBanner />}

@@ -1,17 +1,25 @@
 import { Resend } from "resend";
 import { logger } from "./logger.js";
 
-function getResend(): Resend | null {
+function requireResend(): Resend {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
-    logger.warn("RESEND_API_KEY not set — email delivery disabled");
-    return null;
+    throw new Error("RESEND_API_KEY is not set.");
   }
   return new Resend(key);
 }
 
-function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+function fromAddress(): string {
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!from) {
+    throw new Error("RESEND_FROM_EMAIL is not set.");
+  }
+  return from;
+}
+
+export function assertEmailConfigured(): void {
+  requireResend();
+  fromAddress();
 }
 
 function formatCents(cents: number): string {
@@ -33,8 +41,8 @@ export interface PurchaseEmailOpts {
 }
 
 export async function sendPurchaseEmail(opts: PurchaseEmailOpts): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const resend = requireResend();
+  const from = fromAddress();
 
   const { to, tier, callBalance, pricePaidCents, token, licenseExpiresAt } = opts;
   const expiryStr = licenseExpiresAt.toLocaleDateString("en-US", {
@@ -75,18 +83,18 @@ export async function sendPurchaseEmail(opts: PurchaseEmailOpts): Promise<void> 
 <body>
   <div class="wrapper">
     <div class="card">
-      <h1>Your AegisAPI license is ready</h1>
-      <p class="sub">Thank you for your purchase. Your activation token is below.</p>
+      <h1>Your AegisAPI purchase is complete</h1>
+      <p class="sub">Thank you. Your purchase token is below. Sign in at aegisapi.net to generate your license key.</p>
 
       <div class="section">
-        <div class="label">Activation token</div>
+        <div class="label">Purchase token</div>
         <div class="token-box">${token}</div>
         <div class="steps">
           <ol>
-            <li>Open <strong>AegisAPI</strong> on your computer</li>
-            <li>Go to the <strong>License</strong> tab</li>
-            <li>Click <strong>"Activate purchase"</strong> and enter the token above</li>
-            <li>Your signed license key will be generated and saved automatically</li>
+            <li>Sign in at <strong>aegisapi.net/account</strong></li>
+            <li>Open <strong>AegisAPI</strong> → License tab → copy your <strong>Machine ID</strong></li>
+            <li>On the site, paste that Machine ID and generate your license key</li>
+            <li>Paste the signed key into AegisAPI → License → Activate</li>
           </ol>
         </div>
       </div>
@@ -103,8 +111,8 @@ export async function sendPurchaseEmail(opts: PurchaseEmailOpts): Promise<void> 
       <hr class="divider">
 
       <p class="footer">
-        You can also retrieve your activation token at any time from<br>
-        <a href="https://aegisapi.net/account">aegisapi.net/account</a> → My Licenses<br><br>
+        You can also generate your key anytime from<br>
+        <a href="https://aegisapi.net/account">aegisapi.net/account</a><br><br>
         Questions? Contact <a href="mailto:support@aegisapi.net">support@aegisapi.net</a>
       </p>
     </div>
@@ -113,37 +121,36 @@ export async function sendPurchaseEmail(opts: PurchaseEmailOpts): Promise<void> 
 </html>`;
 
   const text = `
-Your AegisAPI license is ready!
+Your AegisAPI purchase is complete.
 
-Activation token:
+Purchase token:
 ${token}
 
-How to activate:
-1. Open AegisAPI on your computer
-2. Go to the License tab
-3. Click "Activate purchase" and enter the token above
-4. Your signed license key will be generated and saved automatically
+How to get your license key:
+1. Sign in at https://aegisapi.net/account
+2. Open AegisAPI → License tab → copy your Machine ID
+3. On the site, paste that Machine ID and generate your license key
+4. Paste the signed key into AegisAPI → License → Activate
 
 Receipt:
   Product      : ${tierLabel(tier, callBalance)}
   Amount paid  : ${formatCents(pricePaidCents)}
   Valid until  : ${expiryStr}
 
-You can also retrieve your token at: https://aegisapi.net/account
+You can also generate your key at: https://aegisapi.net/account
 
 Questions? Email support@aegisapi.net
 `.trim();
 
-  try {
-    const result = await resend.emails.send({
-      from: `AegisAPI <${getFromEmail()}>`,
-      to,
-      subject: "Your AegisAPI activation token & receipt",
-      html,
-      text,
-    });
-    logger.info({ to, result }, "Purchase email sent");
-  } catch (err) {
-    logger.error({ err, to }, "Failed to send purchase email");
+  const { data, error } = await resend.emails.send({
+    from: `AegisAPI <${from}>`,
+    to,
+    subject: "Your AegisAPI purchase token & receipt",
+    html,
+    text,
+  });
+  if (error) {
+    throw new Error(error.message ?? "Resend rejected the purchase email");
   }
+  logger.info({ emailId: data?.id }, "Purchase email sent");
 }

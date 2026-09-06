@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { Check, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckoutModal } from "@/components/CheckoutModal";
@@ -89,14 +88,7 @@ export default function Pricing() {
           </p>
         </div>
 
-        {/* Free trial banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.5 }}
-          className="mt-16 flex flex-col items-center justify-between gap-6 rounded-2xl border border-border/60 bg-card px-8 py-8 sm:flex-row"
-        >
+        <div className="mt-16 flex flex-col items-center justify-between gap-6 rounded-2xl border border-border/60 bg-card px-8 py-8 sm:flex-row">
           <div>
             <div className="flex items-baseline gap-3">
               <h2 className="text-xl font-semibold text-foreground">Free Trial</h2>
@@ -111,23 +103,14 @@ export default function Pricing() {
               <span className="text-4xl font-bold text-foreground">$0</span>
               <span className="ml-1.5 text-sm text-muted-foreground">/ 20 calls or 7 days</span>
             </div>
-            <Button asChild size="lg" data-testid="button-plan-free-trial">
+            <Button asChild size="lg">
               <Link href="/download">Start free trial</Link>
             </Button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Main tiers */}
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          {/* Call packages */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.06 }}
-            className="flex flex-col rounded-2xl border border-border/60 bg-card p-8"
-            data-testid="card-plan-call-package"
-          >
+          <div className="flex flex-col rounded-2xl border border-border/60 bg-card p-8">
             <h3 className="text-lg font-semibold text-foreground">Call Packages</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Pay once for a fixed block of API calls. Valid for 12 months from
@@ -142,7 +125,6 @@ export default function Pricing() {
                   <div
                     key={sku}
                     className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-4 py-3"
-                    data-testid={`row-call-package-${p?.calls ?? sku}`}
                   >
                     <span className="text-sm text-muted-foreground">
                       {loading ? <PriceSkeleton /> : `${p?.calls ?? "?"} API calls`}
@@ -154,9 +136,8 @@ export default function Pricing() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={loading || checkoutSku === sku}
+                        disabled={loading || !p || checkoutSku === sku}
                         onClick={() => openCheckout(sku)}
-                        data-testid={`button-buy-${sku}`}
                       >
                         {checkoutSku === sku ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -173,24 +154,16 @@ export default function Pricing() {
             <p className="mt-6 text-center text-xs text-muted-foreground">
               You'll need a free account to purchase.
             </p>
-          </motion.div>
+          </div>
 
-          {/* Yearly */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.12 }}
-            className="relative flex flex-col rounded-2xl border border-primary/60 bg-card p-8 shadow-[0_0_40px_-12px_hsl(var(--primary)/0.5)]"
-            data-testid="card-plan-yearly"
-          >
+          <div className="relative flex flex-col rounded-2xl border border-primary/60 bg-card p-8 shadow-[0_0_40px_-12px_hsl(var(--primary)/0.5)]">
             <Badge className="mb-3 w-fit" variant="default">
               Most popular
             </Badge>
             <h3 className="text-lg font-semibold text-foreground">Yearly</h3>
             <div className="mt-3 flex items-baseline gap-1.5">
               <span className="text-4xl font-bold text-foreground">
-                {loading ? <PriceSkeleton /> : `$${data?.prices.yearly?.dollars ?? "89.99"}`}
+                {loading ? <PriceSkeleton /> : `$${data?.prices.yearly?.dollars ?? "—"}`}
               </span>
               <span className="text-sm text-muted-foreground">/ 12 months</span>
             </div>
@@ -211,9 +184,8 @@ export default function Pricing() {
 
             <Button
               className="mt-8 w-full"
-              disabled={loading || checkoutSku === "yearly"}
+              disabled={loading || !data?.prices.yearly || checkoutSku === "yearly"}
               onClick={() => openCheckout("yearly")}
-              data-testid="button-plan-yearly"
             >
               {checkoutSku === "yearly" ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Opening…</>
@@ -224,17 +196,9 @@ export default function Pricing() {
             <p className="mt-3 text-center text-xs text-muted-foreground">
               You'll need a free account to purchase.
             </p>
-          </motion.div>
+          </div>
 
-          {/* Enterprise */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.18 }}
-            className="flex flex-col rounded-2xl border border-border/60 bg-card p-8"
-            data-testid="card-plan-enterprise"
-          >
+          <div className="flex flex-col rounded-2xl border border-border/60 bg-card p-8">
             <h3 className="text-lg font-semibold text-foreground">Enterprise</h3>
             <div className="mt-3 flex items-baseline gap-1.5">
               <span className="text-4xl font-bold text-foreground">Custom</span>
@@ -250,10 +214,10 @@ export default function Pricing() {
               <Feature>Custom procurement &amp; invoicing</Feature>
             </ul>
 
-            <Button asChild variant="outline" className="mt-8 w-full" data-testid="button-plan-enterprise">
+            <Button asChild variant="outline" className="mt-8 w-full">
               <a href="mailto:sales@aegisapi.net">Contact sales</a>
             </Button>
-          </motion.div>
+          </div>
         </div>
 
         <div className="mt-16 rounded-xl border border-border/60 bg-card/50 p-6 text-center">

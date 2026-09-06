@@ -1,14 +1,8 @@
 import { Link } from "wouter";
-import { motion } from "framer-motion";
 import { Lock, ShieldCheck, WifiOff, KeyRound, ArrowRight, Terminal, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import aegisIconTrimmed from "@/assets/aegis-icon-trimmed.png";
 import prisonBars from "@/assets/prison-bars-tile.png";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0 },
-};
 
 const FEATURES = [
   {
@@ -84,30 +78,18 @@ export default function Home() {
 
         <div className="mx-auto max-w-6xl px-6 pb-8 pt-6 sm:pt-8">
           <div className="relative flex items-center justify-center">
-            <motion.img
+            <img
               src={aegisIconTrimmed}
               alt=""
-              initial={{ opacity: 0, x: -30, rotate: -8 }}
-              animate={{ opacity: 1, x: 0, rotate: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
               className="pointer-events-none absolute left-0 top-1/2 hidden h-36 w-36 -translate-y-1/2 object-contain drop-shadow-[0_0_35px_hsl(var(--primary)/0.5)] md:block lg:h-44 lg:w-44"
             />
-            <motion.img
+            <img
               src={aegisIconTrimmed}
               alt=""
-              initial={{ opacity: 0, x: 30, rotate: 8 }}
-              animate={{ opacity: 1, x: 0, rotate: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
               className="pointer-events-none absolute right-0 top-1/2 hidden h-36 w-36 -translate-y-1/2 object-contain drop-shadow-[0_0_35px_hsl(var(--primary)/0.5)] md:block lg:h-44 lg:w-44"
             />
 
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="relative mx-auto flex max-w-3xl flex-col items-center text-center"
-            >
+            <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
               <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-primary/90">
                 Enterprise-grade encryption
               </span>
@@ -129,14 +111,13 @@ export default function Home() {
                   asChild
                   size="lg"
                   className="group shadow-[0_0_30px_-6px_hsl(var(--primary)/0.7)]"
-                  data-testid="button-hero-trial"
                 >
                   <Link href="/download">
                     Start your free trial
                     <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" data-testid="button-hero-pricing">
+                <Button asChild size="lg" variant="outline">
                   <Link href="/pricing">View pricing</Link>
                 </Button>
               </div>
@@ -144,7 +125,7 @@ export default function Home() {
               <p className="mt-5 text-xs tracking-wide text-muted-foreground">
                 No credit card required · Windows desktop app
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -166,13 +147,9 @@ export default function Home() {
           </div>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
-            {FEATURES.map((f, i) => (
-              <motion.div
+            {FEATURES.map((f) => (
+              <div
                 key={f.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.06 }}
                 className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-7 transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.4)]"
               >
                 <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl transition-opacity group-hover:opacity-100 opacity-0" />
@@ -181,7 +158,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-semibold text-foreground">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -216,7 +193,6 @@ export default function Home() {
               <Button
                 asChild
                 className="mt-10 shadow-[0_0_30px_-6px_hsl(var(--primary)/0.7)]"
-                data-testid="button-steps-download"
               >
                 <Link href="/download">
                   Download AegisAPI
@@ -261,10 +237,10 @@ export default function Home() {
             Try AegisAPI free. Upgrade only when you're ready.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button asChild size="lg" data-testid="button-cta-trial">
+            <Button asChild size="lg">
               <Link href="/download">Start your free trial</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" data-testid="button-cta-security">
+            <Button asChild size="lg" variant="outline">
               <Link href="/security">See how it's secured</Link>
             </Button>
           </div>

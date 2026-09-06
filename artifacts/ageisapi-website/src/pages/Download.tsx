@@ -28,7 +28,7 @@ export default function Download() {
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-4">
-          <Button asChild size="lg" className="w-full sm:w-auto" data-testid="button-download-windows">
+          <Button asChild size="lg" className="w-full sm:w-auto">
             <a href={setupHref}>
               <Monitor className="mr-2 h-4 w-4" />
               Download for Windows

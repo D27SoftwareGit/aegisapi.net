@@ -1,8 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { ClerkProvider } from "@clerk/clerk-react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Security from "@/pages/Security";
@@ -16,8 +14,6 @@ import SignUpPage from "@/pages/SignUp";
 import AccountPage from "@/pages/Account";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-
-const queryClient = new QueryClient();
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -51,16 +47,12 @@ function Router() {
 function App() {
   return (
     <ClerkProvider publishableKey={publishableKey}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <div className="dark">
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </div>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <div className="dark">
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </div>
     </ClerkProvider>
   );
 }

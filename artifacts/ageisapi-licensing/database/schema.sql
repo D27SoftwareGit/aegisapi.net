@@ -1,7 +1,5 @@
--- AegisAPI Licensing — PostgreSQL schema
--- Source of truth for all tables. Apply to a fresh DB with:
---   psql $DATABASE_URL -f database/schema.sql
--- Safe to re-run: all statements use IF NOT EXISTS / ADD COLUMN IF NOT EXISTS.
+-- AegisAPI licensing tables. Apply to a fresh DB:
+--   psql $AEGISAPI_DB_URL -f database/schema.sql
 
 CREATE TABLE IF NOT EXISTS public.app_users (
     id integer NOT NULL,
@@ -24,24 +22,14 @@ ALTER TABLE ONLY public.app_users
 ALTER TABLE ONLY public.app_users
     ADD CONSTRAINT IF NOT EXISTS app_users_clerk_user_id_unique UNIQUE (clerk_user_id);
 
--- Migration: add stripe_customer_id_encrypted if it doesn't exist yet
-ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS stripe_customer_id_encrypted text;
-ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS first_name text;
-ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS last_name text;
-ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS email text;
-ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS marketing_opt_in boolean NOT NULL DEFAULT false;
-
-
 CREATE TABLE IF NOT EXISTS public.licensing_license_bindings (
     id integer NOT NULL,
     license_key_encrypted text NOT NULL,
     license_key_lookup_hash text NOT NULL,
     machine_id_encrypted text,
-    status text DEFAULT 'unbound'::text NOT NULL,
+    status text DEFAULT 'bound'::text NOT NULL,
     pack_call_balance integer DEFAULT 0 NOT NULL,
     bound_at timestamp without time zone,
-    released_at timestamp without time zone,
-    force_cleared boolean DEFAULT false NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     updated_at timestamp without time zone DEFAULT now() NOT NULL
 );
@@ -57,7 +45,6 @@ ALTER TABLE ONLY public.licensing_license_bindings
     ADD CONSTRAINT IF NOT EXISTS licensing_license_bindings_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.licensing_license_bindings
     ADD CONSTRAINT IF NOT EXISTS licensing_license_bindings_license_key_lookup_hash_unique UNIQUE (license_key_lookup_hash);
-
 
 CREATE TABLE IF NOT EXISTS public.licensing_user_licenses (
     id integer NOT NULL,
@@ -77,27 +64,6 @@ ALTER TABLE ONLY public.licensing_user_licenses
     ADD CONSTRAINT IF NOT EXISTS licensing_user_licenses_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.licensing_user_licenses
     ADD CONSTRAINT IF NOT EXISTS licensing_user_licenses_license_key_lookup_hash_unique UNIQUE (license_key_lookup_hash);
-
-
-CREATE TABLE IF NOT EXISTS public.licensing_audit_log (
-    id integer NOT NULL,
-    license_key_lookup_hash text NOT NULL,
-    action text NOT NULL,
-    actor text DEFAULT 'system'::text NOT NULL,
-    detail text,
-    created_at timestamp without time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE IF NOT EXISTS public.licensing_audit_log_id_seq
-    AS integer START WITH 1 INCREMENT BY 1
-    NO MINVALUE NO MAXVALUE CACHE 1;
-
-ALTER SEQUENCE public.licensing_audit_log_id_seq OWNED BY public.licensing_audit_log.id;
-ALTER TABLE ONLY public.licensing_audit_log ALTER COLUMN id SET DEFAULT nextval('public.licensing_audit_log_id_seq'::regclass);
-
-ALTER TABLE ONLY public.licensing_audit_log
-    ADD CONSTRAINT IF NOT EXISTS licensing_audit_log_pkey PRIMARY KEY (id);
-
 
 CREATE TABLE IF NOT EXISTS public.purchase_tokens (
     id integer NOT NULL,

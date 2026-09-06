@@ -14,6 +14,10 @@ function getKey(): Buffer {
   return key;
 }
 
+export function assertEncryptionKeyConfigured(): void {
+  getKey();
+}
+
 // AES-256-GCM field-level encryption. Stored format: base64(iv):base64(tag):base64(ciphertext)
 export function encryptField(plaintext: string): string {
   const key = getKey();

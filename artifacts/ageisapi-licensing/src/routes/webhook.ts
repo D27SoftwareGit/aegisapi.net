@@ -6,12 +6,11 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-router.post("/api/clerk/webhook", async (req, res) => {
+// POST /api/clerk/webhook — mounted at that path in app.ts; route is "/".
+router.post("/", async (req, res) => {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    logger.error("CLERK_WEBHOOK_SECRET not set");
-    res.status(500).json({ error: "webhook_not_configured" });
-    return;
+    throw new Error("CLERK_WEBHOOK_SECRET is not set.");
   }
 
   const svixId = req.headers["svix-id"] as string;
@@ -37,18 +36,22 @@ router.post("/api/clerk/webhook", async (req, res) => {
     return;
   }
 
-  if (payload.type === "user.deleted") {
-    const clerkUserId = payload.data.id as string;
-    if (clerkUserId) {
-      await db
-        .update(appUsersTable)
-        .set({ revokedAt: new Date() })
-        .where(eq(appUsersTable.clerkUserId, clerkUserId));
-      logger.info({ clerkUserId }, "User deleted — account revoked");
+  try {
+    if (payload.type === "user.deleted") {
+      const clerkUserId = payload.data.id as string;
+      if (clerkUserId) {
+        await db
+          .update(appUsersTable)
+          .set({ revokedAt: new Date() })
+          .where(eq(appUsersTable.clerkUserId, clerkUserId));
+        logger.info({ clerkUserId }, "User deleted — account revoked");
+      }
     }
+    res.json({ received: true });
+  } catch (err) {
+    logger.error({ err }, "Clerk webhook handler failed");
+    res.status(500).json({ error: "webhook_failed" });
   }
-
-  res.json({ received: true });
 });
 
 export default router;

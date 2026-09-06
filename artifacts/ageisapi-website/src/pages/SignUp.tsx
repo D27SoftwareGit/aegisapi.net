@@ -1,15 +1,12 @@
 import { useState } from "react";
-import { useSignUp, useAuth } from "@clerk/clerk-react";
+import { useSignUp } from "@clerk/clerk-react";
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 type Step = "start" | "verify";
 
-const LICENSING_BASE = import.meta.env.VITE_LICENSING_API_URL ?? "/licensing";
-
 export default function SignUpPage() {
   const { signUp, setActive, isLoaded } = useSignUp();
-  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
 
   const [step, setStep] = useState<Step>("start");
@@ -18,7 +15,6 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [code, setCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -60,22 +56,6 @@ export default function SignUpPage() {
       const result = await signUp.attemptEmailAddressVerification({ code });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-
-        // Store profile + marketing preference on our side
-        try {
-          const token = await getToken();
-          await fetch(`${LICENSING_BASE}/user/profile`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ firstName, lastName, email, marketingOptIn }),
-          });
-        } catch {
-          // Non-fatal — user is signed in, profile save can be retried later
-        }
-
         setLocation("/account");
       } else {
         setError("Verification incomplete. Please try again.");
@@ -184,18 +164,6 @@ export default function SignUpPage() {
                   <p className="text-xs text-destructive">Passwords do not match.</p>
                 )}
               </div>
-
-              <label className="flex cursor-pointer items-start gap-3 pt-1">
-                <input
-                  type="checkbox"
-                  checked={marketingOptIn}
-                  onChange={e => setMarketingOptIn(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-                />
-                <span className="text-xs text-muted-foreground leading-relaxed">
-                  Receive updates on new releases and features
-                </span>
-              </label>
 
               {error && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">

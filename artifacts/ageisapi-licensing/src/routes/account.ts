@@ -57,21 +57,4 @@ router.get("/account/licenses", requireAuth, async (req, res, next) => {
   }
 });
 
-// GET /account/history
-// Returns audit log entries for all licenses the user owns.
-router.get("/account/history", requireAuth, async (_req, res, next) => {
-  try {
-    const clerkUserId = res.locals.clerkUserId as string;
-
-    const userRows = await db
-      .select({ hash: userLicensesTable.licenseKeyLookupHash })
-      .from(userLicensesTable)
-      .where(eq(userLicensesTable.clerkUserId, clerkUserId));
-
-    res.json({ history: userRows.map((r) => r.hash) });
-  } catch (err) {
-    next(err);
-  }
-});
-
 export default router;

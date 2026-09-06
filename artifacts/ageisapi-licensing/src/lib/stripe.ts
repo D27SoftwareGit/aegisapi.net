@@ -41,11 +41,19 @@ export function getStripePublishableKey(): string {
   return key;
 }
 
-export function getWebhookSecret(): string | null {
+export function getWebhookSecret(): string {
   const target = stripeApiTarget();
-  return target === "prod"
-    ? (process.env.STRIPE_PROD_WEBHOOK_SECRET ?? null)
-    : (process.env.STRIPE_TEST_WEBHOOK_SECRET ?? null);
+  const key =
+    target === "prod"
+      ? process.env.STRIPE_PROD_WEBHOOK_SECRET
+      : process.env.STRIPE_TEST_WEBHOOK_SECRET;
+  if (!key) {
+    throw new Error(
+      `Stripe ${target} webhook secret not configured. ` +
+        `Set ${target === "prod" ? "STRIPE_PROD_WEBHOOK_SECRET" : "STRIPE_TEST_WEBHOOK_SECRET"}.`,
+    );
+  }
+  return key;
 }
 
 export const SKUS = {
@@ -99,8 +107,7 @@ export function getAllPrices(): Record<
 > {
   const result: Record<string, unknown> = {};
   for (const [key, sku] of Object.entries(SKUS) as [SkuKey, (typeof SKUS)[SkuKey]][]) {
-    const raw = process.env[sku.priceEnvKey];
-    const cents = raw ? parseInt(raw, 10) : 0;
+    const cents = getSkuPriceCents(key);
     result[key] = {
       name: sku.name,
       calls: sku.calls,

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { db, appUsersTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { db, appUsersTable, purchaseTokensTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/clerk.js";
 import { encryptField, decryptField } from "../lib/crypto.js";
 import { getStripe, getStripePublishableKey, SKUS, getSkuPriceCents, getAllPrices, type SkuKey } from "../lib/stripe.js";
@@ -37,13 +37,10 @@ function isAllowedCheckoutReturnUrl(raw: string): boolean {
   } catch {
     return false;
   }
-  const host = parsed.hostname.toLowerCase();
-  if (host === "localhost" || host === "127.0.0.1") {
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  }
   if (parsed.protocol !== "https:") {
     return false;
   }
+  const host = parsed.hostname.toLowerCase();
   return host === "aegisapi.net" || host === "www.aegisapi.net";
 }
 
@@ -82,11 +79,7 @@ router.post(
 
       let stripeCustomerId: string | undefined;
       if (appUser?.stripeCustomerIdEncrypted) {
-        try {
-          stripeCustomerId = decryptField(appUser.stripeCustomerIdEncrypted);
-        } catch {
-          stripeCustomerId = undefined;
-        }
+        stripeCustomerId = decryptField(appUser.stripeCustomerIdEncrypted);
       }
 
       if (!stripeCustomerId) {
@@ -171,10 +164,6 @@ router.get(
     const clerkUserId = res.locals.clerkUserId as string;
 
     try {
-      // Check if a purchase token was issued for this session
-      const { purchaseTokensTable } = await import("@workspace/db");
-      const { eq, and } = await import("drizzle-orm");
-
       const [token] = await db
         .select({ id: purchaseTokensTable.id })
         .from(purchaseTokensTable)
@@ -191,17 +180,30 @@ router.get(
         return;
       }
 
-      // No token — check if the session even completed on Stripe's side
       const stripe = getStripe();
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-      if (session.status === "complete") {
-        // Session completed but no purchase token → 3DS failed, refunded
-        res.json({ status: "refunded" });
-      } else {
-        // Session not yet complete (user may have abandoned)
-        res.json({ status: "pending" });
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["payment_intent.latest_charge"],
+      });
+      if (session.metadata?.clerkUserId !== clerkUserId) {
+        res.status(404).json({ error: "session_not_found" });
+        return;
       }
+
+      if (session.status !== "complete") {
+        res.json({ status: "pending" });
+        return;
+      }
+
+      const pi = session.payment_intent;
+      let hasRefund = false;
+      if (pi && typeof pi === "object") {
+        const charge = pi.latest_charge;
+        if (charge && typeof charge === "object") {
+          hasRefund = charge.refunded === true;
+        }
+      }
+
+      res.json({ status: hasRefund ? "refunded" : "pending" });
     } catch (err) {
       logger.error({ err, sessionId, clerkUserId }, "Failed to get session status");
       res.status(500).json({ error: "status_unavailable" });
